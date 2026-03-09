@@ -1,0 +1,7 @@
+streamlit
+tensorflow-cpu
+numpy
+pandas
+scikit-learn
+fpdf
+h5py
