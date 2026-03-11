@@ -1,7 +1,7 @@
 streamlit
-tensorflow-cpu
+tensorflow
 numpy
 pandas
 scikit-learn
-fpdf
+fpdf2
 h5py
