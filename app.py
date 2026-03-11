@@ -191,11 +191,12 @@ if st.session_state.step <= total_steps:
     
     if st.session_state.step == 1:
         st.markdown("<div class='question-title'>What is the patient's full name?</div>", unsafe_allow_html=True)
-        st.text_input("Name", key="p_name", label_visibility="collapsed", placeholder="e.g. John Doe")
+        name_val = st.text_input("Name", value=st.session_state.p_name, label_visibility="collapsed", placeholder="e.g. John Doe")
         st.write("")
         if st.button("Continue ➔", type="primary", use_container_width=True):
-            if st.session_state.p_name.strip():
-                next_step()
+            if name_val.strip():
+                st.session_state.p_name = name_val
+                st.session_state.step += 1
                 st.rerun()
             else:
                 st.error("Please enter a name to continue.")
@@ -203,55 +204,87 @@ if st.session_state.step <= total_steps:
     elif st.session_state.step == 2:
         first_name = st.session_state.p_name.split()[0] if st.session_state.p_name else "the patient"
         st.markdown(f"<div class='question-title'>How old is {first_name}?</div>", unsafe_allow_html=True)
-        st.slider("Age (Years)", 0, 100, key="p_age", label_visibility="collapsed")
+        age_val = st.slider("Age (Years)", 0, 100, value=int(st.session_state.p_age), label_visibility="collapsed")
         st.write("")
         col1, col2 = st.columns(2)
         with col1:
-            st.button("⬅️ Back", on_click=prev_step, use_container_width=True)
+            if st.button("⬅️ Back", use_container_width=True):
+                st.session_state.p_age = age_val
+                st.session_state.step -= 1
+                st.rerun()
         with col2:
-            st.button("Continue ➔", on_click=next_step, type="primary", use_container_width=True)
+            if st.button("Continue ➔", type="primary", use_container_width=True):
+                st.session_state.p_age = age_val
+                st.session_state.step += 1
+                st.rerun()
             
     elif st.session_state.step == 3:
         st.markdown(f"<div class='question-title'>Do they have hypertension (high blood pressure)?</div>", unsafe_allow_html=True)
-        st.selectbox("Hypertension", ["No", "Yes"], key="p_hypertension", label_visibility="collapsed")
+        hyp_idx = 1 if st.session_state.p_hypertension == "Yes" else 0
+        hyp_val = st.selectbox("Hypertension", ["No", "Yes"], index=hyp_idx, label_visibility="collapsed")
         st.write("")
         col1, col2 = st.columns(2)
         with col1:
-            st.button("⬅️ Back", on_click=prev_step, use_container_width=True)
+            if st.button("⬅️ Back", use_container_width=True):
+                st.session_state.p_hypertension = hyp_val
+                st.session_state.step -= 1
+                st.rerun()
         with col2:
-            st.button("Continue ➔", on_click=next_step, type="primary", use_container_width=True)
+            if st.button("Continue ➔", type="primary", use_container_width=True):
+                st.session_state.p_hypertension = hyp_val
+                st.session_state.step += 1
+                st.rerun()
             
     elif st.session_state.step == 4:
         st.markdown(f"<div class='question-title'>Is there any history of heart disease?</div>", unsafe_allow_html=True)
-        st.selectbox("Heart Disease", ["No", "Yes"], key="p_heart_disease", label_visibility="collapsed")
+        hd_idx = 1 if st.session_state.p_heart_disease == "Yes" else 0
+        hd_val = st.selectbox("Heart Disease", ["No", "Yes"], index=hd_idx, label_visibility="collapsed")
         st.write("")
         col1, col2 = st.columns(2)
         with col1:
-            st.button("⬅️ Back", on_click=prev_step, use_container_width=True)
+            if st.button("⬅️ Back", use_container_width=True):
+                st.session_state.p_heart_disease = hd_val
+                st.session_state.step -= 1
+                st.rerun()
         with col2:
-            st.button("Continue ➔", on_click=next_step, type="primary", use_container_width=True)
+            if st.button("Continue ➔", type="primary", use_container_width=True):
+                st.session_state.p_heart_disease = hd_val
+                st.session_state.step += 1
+                st.rerun()
             
     elif st.session_state.step == 5:
         st.markdown(f"<div class='question-title'>What is their average blood glucose level (mg/dL)?</div>", unsafe_allow_html=True)
-        st.number_input("Average Glucose Level", 50.0, 300.0, key="p_glucose", label_visibility="collapsed")
+        gluc_val = st.number_input("Average Glucose Level", 50.0, 300.0, value=float(st.session_state.p_glucose), label_visibility="collapsed")
         st.caption("*(Normal fasting glucose is ~70-99 mg/dL)*")
         st.write("")
         col1, col2 = st.columns(2)
         with col1:
-            st.button("⬅️ Back", on_click=prev_step, use_container_width=True)
+            if st.button("⬅️ Back", use_container_width=True):
+                st.session_state.p_glucose = gluc_val
+                st.session_state.step -= 1
+                st.rerun()
         with col2:
-            st.button("Continue ➔", on_click=next_step, type="primary", use_container_width=True)
+            if st.button("Continue ➔", type="primary", use_container_width=True):
+                st.session_state.p_glucose = gluc_val
+                st.session_state.step += 1
+                st.rerun()
             
     elif st.session_state.step == 6:
         st.markdown(f"<div class='question-title'>Finally, what is their Body Mass Index (BMI)?</div>", unsafe_allow_html=True)
-        st.number_input("BMI", 10.0, 60.0, key="p_bmi", label_visibility="collapsed")
+        bmi_val = st.number_input("BMI", 10.0, 60.0, value=float(st.session_state.p_bmi), label_visibility="collapsed")
         st.caption("*(Normal healthy BMI is 18.5-24.9)*")
         st.write("")
         col1, col2 = st.columns(2)
         with col1:
-            st.button("⬅️ Back", on_click=prev_step, use_container_width=True)
+            if st.button("⬅️ Back", use_container_width=True):
+                st.session_state.p_bmi = bmi_val
+                st.session_state.step -= 1
+                st.rerun()
         with col2:
-            st.button("Analyze Risk", on_click=next_step, type="primary", use_container_width=True)
+            if st.button("Analyze Risk", type="primary", use_container_width=True):
+                st.session_state.p_bmi = bmi_val
+                st.session_state.step += 1
+                st.rerun()
             
     st.markdown("</div>", unsafe_allow_html=True)
 
