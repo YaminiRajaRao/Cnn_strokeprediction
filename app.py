@@ -33,23 +33,33 @@ st.markdown("""
         background-color: #f8fafc;
     }
 
-    /* Style the main predict button */
-    .stButton>button {
-        width: 100%;
-        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-        color: white;
+    /* Button Styles */
+    div.stButton > button {
         font-weight: 600;
         border-radius: 12px;
         height: 56px;
         font-size: 18px;
+        transition: all 0.2s ease;
+    }
+    div.stButton > button[kind="primary"] {
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        color: white;
         border: none;
         box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
-        transition: all 0.3s ease;
     }
-    .stButton>button:hover {
+    div.stButton > button[kind="primary"]:hover {
         background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
         box-shadow: 0 6px 16px rgba(239, 68, 68, 0.4);
         transform: translateY(-2px);
+    }
+    div.stButton > button[kind="secondary"] {
+        background-color: white;
+        color: #475569;
+        border: 2px solid #cbd5e1;
+    }
+    div.stButton > button[kind="secondary"]:hover {
+        border-color: #94a3b8;
+        background-color: #f8fafc;
     }
     
     /* Typography improvements */
@@ -60,6 +70,35 @@ st.markdown("""
     
     dt, dd, p {
         color: #334155;
+    }
+
+    /* Input Card Form */
+    .input-card {
+        background: white;
+        padding: 30px 24px;
+        border-radius: 20px;
+        box-shadow: 0 4px 10px -2px rgba(0, 0, 0, 0.05), 0 2px 5px -2px rgba(0, 0, 0, 0.05);
+        margin-top: 16px;
+        margin-bottom: 24px;
+        border: 1px solid #f1f5f9;
+        min-height: 250px;
+    }
+    .question-title {
+        color: #1e293b;
+        font-family: 'Inter', -apple-system, sans-serif;
+        font-size: 1.4rem;
+        font-weight: 700;
+        margin-bottom: 20px;
+        margin-top: 0;
+        line-height: 1.3;
+    }
+    .step-text {
+        font-size: 0.85rem;
+        color: #64748b;
+        margin-bottom: 8px;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        font-weight: 700;
     }
 
     /* Prediction Result Cards */
@@ -90,15 +129,6 @@ st.markdown("""
     }
     .danger h2 { color: #b91c1c; }
     
-    /* Custom input card wrapper */
-    .input-card {
-        background: white;
-        padding: 24px;
-        border-radius: 20px;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
-        margin-bottom: 24px;
-        border: 1px solid #f1f5f9;
-    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -115,7 +145,30 @@ except Exception as e:
     st.error(f"Error loading model artifacts: {e}")
     st.stop()
 
-# =============== UI LAYOUT ===============
+# =============== SESSION STATE SETUP ===============
+if 'step' not in st.session_state:
+    st.session_state.step = 1
+if 'p_name' not in st.session_state:
+    st.session_state.p_name = ""
+if 'p_age' not in st.session_state:
+    st.session_state.p_age = 45
+if 'p_hypertension' not in st.session_state:
+    st.session_state.p_hypertension = "No"
+if 'p_heart_disease' not in st.session_state:
+    st.session_state.p_heart_disease = "No"
+if 'p_glucose' not in st.session_state:
+    st.session_state.p_glucose = 120.0
+if 'p_bmi' not in st.session_state:
+    st.session_state.p_bmi = 25.0
+
+def next_step(): st.session_state.step += 1
+def prev_step(): st.session_state.step -= 1
+def reset_app():
+    for key in ['step', 'p_name', 'p_age', 'p_hypertension', 'p_heart_disease', 'p_glucose', 'p_bmi']:
+        if key in st.session_state:
+            del st.session_state[key]
+
+# =============== UI LAYOUT (WIZARD) ===============
 
 # 1. App Header
 col_logo, col_title = st.columns([1, 4])
@@ -124,39 +177,99 @@ with col_logo:
 with col_title:
     st.markdown("<h2 style='margin:0; padding-top:12px; font-weight: 800;'>Stroke Risk AI</h2>", unsafe_allow_html=True)
 
-st.markdown("<p style='color: #64748b; margin-top: -5px; margin-bottom: 24px;'>Advanced CNN-based risk assessment tool</p>", unsafe_allow_html=True)
+st.markdown("<p style='color: #64748b; margin-top: -5px; margin-bottom: 20px;'>Step-by-step biometric assessment</p>", unsafe_allow_html=True)
 
-# 2. Main Form Inputs (Moved from Sidebar to Center)
-st.markdown("<div class='input-card'>", unsafe_allow_html=True)
-st.markdown("<h4 style='margin-top:0; color:#1e293b;'>📋 Patient Details</h4>", unsafe_allow_html=True)
+total_steps = 6
 
-age = st.slider('Age (Years)', 0, 100, 45)
+if st.session_state.step <= total_steps:
+    # Progress Bar
+    progress_val = (st.session_state.step - 1) / total_steps
+    st.progress(progress_val)
+    
+    st.markdown("<div class='input-card'>", unsafe_allow_html=True)
+    st.markdown(f"<div class='step-text'>STEP {st.session_state.step} OF {total_steps}</div>", unsafe_allow_html=True)
+    
+    if st.session_state.step == 1:
+        st.markdown("<div class='question-title'>What is the patient's full name?</div>", unsafe_allow_html=True)
+        st.text_input("Name", key="p_name", label_visibility="collapsed", placeholder="e.g. John Doe")
+        st.write("")
+        if st.button("Continue ➔", type="primary", use_container_width=True):
+            if st.session_state.p_name.strip():
+                next_step()
+                st.rerun()
+            else:
+                st.error("Please enter a name to continue.")
+                
+    elif st.session_state.step == 2:
+        first_name = st.session_state.p_name.split()[0] if st.session_state.p_name else "the patient"
+        st.markdown(f"<div class='question-title'>How old is {first_name}?</div>", unsafe_allow_html=True)
+        st.slider("Age (Years)", 0, 100, key="p_age", label_visibility="collapsed")
+        st.write("")
+        col1, col2 = st.columns(2)
+        with col1:
+            st.button("⬅️ Back", on_click=prev_step, use_container_width=True)
+        with col2:
+            st.button("Continue ➔", on_click=next_step, type="primary", use_container_width=True)
+            
+    elif st.session_state.step == 3:
+        st.markdown(f"<div class='question-title'>Do they have hypertension (high blood pressure)?</div>", unsafe_allow_html=True)
+        st.selectbox("Hypertension", ["No", "Yes"], key="p_hypertension", label_visibility="collapsed")
+        st.write("")
+        col1, col2 = st.columns(2)
+        with col1:
+            st.button("⬅️ Back", on_click=prev_step, use_container_width=True)
+        with col2:
+            st.button("Continue ➔", on_click=next_step, type="primary", use_container_width=True)
+            
+    elif st.session_state.step == 4:
+        st.markdown(f"<div class='question-title'>Is there any history of heart disease?</div>", unsafe_allow_html=True)
+        st.selectbox("Heart Disease", ["No", "Yes"], key="p_heart_disease", label_visibility="collapsed")
+        st.write("")
+        col1, col2 = st.columns(2)
+        with col1:
+            st.button("⬅️ Back", on_click=prev_step, use_container_width=True)
+        with col2:
+            st.button("Continue ➔", on_click=next_step, type="primary", use_container_width=True)
+            
+    elif st.session_state.step == 5:
+        st.markdown(f"<div class='question-title'>What is their average blood glucose level (mg/dL)?</div>", unsafe_allow_html=True)
+        st.number_input("Average Glucose Level", 50.0, 300.0, key="p_glucose", label_visibility="collapsed")
+        st.caption("*(Normal fasting glucose is ~70-99 mg/dL)*")
+        st.write("")
+        col1, col2 = st.columns(2)
+        with col1:
+            st.button("⬅️ Back", on_click=prev_step, use_container_width=True)
+        with col2:
+            st.button("Continue ➔", on_click=next_step, type="primary", use_container_width=True)
+            
+    elif st.session_state.step == 6:
+        st.markdown(f"<div class='question-title'>Finally, what is their Body Mass Index (BMI)?</div>", unsafe_allow_html=True)
+        st.number_input("BMI", 10.0, 60.0, key="p_bmi", label_visibility="collapsed")
+        st.caption("*(Normal healthy BMI is 18.5-24.9)*")
+        st.write("")
+        col1, col2 = st.columns(2)
+        with col1:
+            st.button("⬅️ Back", on_click=prev_step, use_container_width=True)
+        with col2:
+            st.button("Analyze Risk", on_click=next_step, type="primary", use_container_width=True)
+            
+    st.markdown("</div>", unsafe_allow_html=True)
 
-# Use columns to tightly pack inputs on mobile
-col_h1, col_h2 = st.columns(2)
-with col_h1:
-    hypertension = st.selectbox('Hypertension?', [0, 1], format_func=lambda x: 'Yes' if x == 1 else 'No')
-with col_h2:
-    heart_disease = st.selectbox('Heart Disease?', [0, 1], format_func=lambda x: 'Yes' if x == 1 else 'No')
+# =============== RESULT PAGE (STEP 7) ===============
+else:
+    st.progress(1.0)
+    
+    # Process inputs for model
+    age = st.session_state.p_age
+    hypertension = 1 if st.session_state.p_hypertension == "Yes" else 0
+    heart_disease = 1 if st.session_state.p_heart_disease == "Yes" else 0
+    avg_glucose = st.session_state.p_glucose
+    bmi = st.session_state.p_bmi
+    patient_name = st.session_state.p_name
 
-col_v1, col_v2 = st.columns(2)
-with col_v1:
-    avg_glucose = st.number_input('Glucose (mg/dL)', 50.0, 300.0, 120.0)
-with col_v2:
-    bmi = st.number_input('BMI Rating', 10.0, 60.0, 25.0)
-
-st.markdown("</div>", unsafe_allow_html=True)
-
-# 3. Predict Button
-predict_btn = st.button('Analyze Risk Now', use_container_width=True)
-
-# =============== APP LOGIC ===============
-
-if predict_btn:
-    # Prepare Input
     input_data = np.array([[age, hypertension, heart_disease, avg_glucose, bmi]])
     
-    # Scale & Reshape for 1D CNN
+    # Scale & Reshape
     input_scaled = scaler.transform(input_data)
     input_scaled = input_scaled.reshape(1, input_scaled.shape[1], 1)
     
@@ -164,16 +277,14 @@ if predict_btn:
     with st.spinner('Analyzing biometrics...'):
         prediction_prob = model.predict(input_scaled)[0][0]
     
-    # Generate Output
-    st.markdown("---")
-    
+    # Output Result
     risk_percentage = prediction_prob * 100
     
     if prediction_prob > 0.5:
         st.markdown(f"""
             <div class="prediction-box danger">
                 <h2>⚠️ HIGH RISK DETECTED</h2>
-                <p>The model predicts an elevated probability of stroke.</p>
+                <p>The model predicts an elevated probability of stroke for {patient_name}.</p>
                 <h1 style="font-size: 3.5rem; margin: 15px 0;">{risk_percentage:.1f}%</h1>
                 <p style="font-size: 0.9rem; margin-top: 10px; font-weight: bold;">Immediate medical consultation recommended</p>
             </div>
@@ -182,7 +293,7 @@ if predict_btn:
         st.markdown(f"""
             <div class="prediction-box safe">
                 <h2>✅ LOW RISK</h2>
-                <p>The model predicts a low probability of stroke.</p>
+                <p>The model predicts a low probability of stroke for {patient_name}.</p>
                 <h1 style="font-size: 3.5rem; margin: 15px 0;">{risk_percentage:.1f}%</h1>
             </div>
         """, unsafe_allow_html=True)
@@ -195,8 +306,9 @@ if predict_btn:
     st.markdown("#### 📄 Examination Report")
     
     report_data = {
-        "Metric": ["Age", "Hypertension", "Heart Disease", "Avg. Glucose", "BMI", "Risk Score"],
+        "Metric": ["Patient Name", "Age", "Hypertension", "Heart Disease", "Avg. Glucose", "BMI", "Risk Score"],
         "Value": [
+            f"{patient_name}",
             f"{age}",
             "Yes" if hypertension == 1 else "No",
             "Yes" if heart_disease == 1 else "No",
@@ -207,11 +319,9 @@ if predict_btn:
     }
     
     report_df = pd.DataFrame(report_data)
-    
-    # Display table beautifully
     st.dataframe(report_df, use_container_width=True, hide_index=True)
     
-    # --- Generate PDF Background Logic ---
+    # --- Generate PDF Logic ---
     class PDF(FPDF):
         def header(self):
             self.set_font('Arial', 'B', 16)
@@ -238,6 +348,7 @@ if predict_btn:
     pdf.add_page()
     
     pdf.chapter_title('Patient Details')
+    pdf.add_metric('Name:', f"{patient_name}", "-")
     pdf.add_metric('Age:', f"{age} years", "0-100")
     pdf.add_metric('Hypertension:', "Yes" if hypertension else "No", "-")
     pdf.add_metric('Heart Disease:', "Yes" if heart_disease else "No", "-")
@@ -266,13 +377,17 @@ if predict_btn:
     pdf_output = pdf.output(dest='S').encode('latin-1')
     
     st.write("")
-    st.download_button(
-        label="📥 Download PDF Report",
-        data=pdf_output,
-        file_name="stroke_prediction_report.pdf",
-        mime="application/pdf",
-        use_container_width=True
-    )
+    col_d, col_r = st.columns(2)
+    with col_d:
+        st.download_button(
+            label="📥 Download PDF",
+            data=pdf_output,
+            file_name=f"stroke_report_{patient_name.replace(' ', '_')}.pdf",
+            mime="application/pdf",
+            use_container_width=True
+        )
+    with col_r:
+        st.button("↺ Start Over", on_click=reset_app, use_container_width=True)
 
 st.markdown("<br>", unsafe_allow_html=True)
 with st.expander("ℹ️ About the Model Sandbox"):
